@@ -1,3 +1,6 @@
+// #define N_SNACKS 8
+#define N_SNACKS 2
+
 // # Liquid Crystal Display
 #include <LiquidCrystal_I2C.h> //from github.com/johnrickman/LiquidCrystal_I2C
 
@@ -31,8 +34,22 @@ Keypad keypad=Keypad(makeKeymap(keys), rowPins, colPins, N_ROWS, N_COLS);
 const float STEPS_PER_OUTPUT_REVOLUTION=STEPS_PER_REVOLUTION*GEAR_REDUCTION;
 const float tau=STEPS_PER_OUTPUT_REVOLUTION; //one full revolution
 // byte pins[4]={13, 12, 11, 10};
-byte pins[4]={46, 48, 50, 52};
-Stepper motor(STEPS_PER_REVOLUTION, pins[0], pins[2], pins[1], pins[3]);  //Pin mapping: 1N1 -> 13, 1N2 -> 12, 1N3 -> 11, 1N4 -> 10
+byte pins[N_SNACKS][4]={
+    {46, 48, 50, 52}, //Pin mapping: 1N1 -> 46, 1N2 -> 48, 1N3 -> 50, 1N4 -> 52
+    {53, 51, 49, 47},
+    // {0, 0, 0, 0},
+    // {0, 0, 0, 0},
+    // {0, 0, 0, 0},
+    // {0, 0, 0, 0},
+    // {0, 0, 0, 0},
+    // {0, 0, 0, 0},
+};
+Stepper motors[2]={
+    Stepper(STEPS_PER_REVOLUTION, pins[0][0], pins[0][2], pins[0][1], pins[0][3]),
+    Stepper(STEPS_PER_REVOLUTION, pins[1][0], pins[1][2], pins[1][1], pins[1][3])
+};
+// for (byte i=0; i<N_SNACKS; i++)
+//     motors[i]=motor(STEPS_PER_REVOLUTION, pins[i][0], pins[i][2], pins[i][1], pins[i][3]);
 
 
 void setup() {
@@ -47,22 +64,30 @@ void setup() {
 
 
 void loop() {
-    // // Get value if keypad pressed
-    // char customKey=keypad.getKey();
+    // Get value if keypad pressed
+    char customKey=keypad.getKey();
     
-    // if (customKey) { //pressed key
-    //     char message[50]; //buffer
-    //     sprintf(message, "Selected %c.", customKey);
-    //     Serial.println(message);
+    if (customKey) { //pressed key
+        byte motorI=int(customKey)-int('1'); //offset from 1
+        lcd.clear();
+        lcd.setCursor(0, 0);
 
-    //     lcd.clear();
-    //     lcd.setCursor(0, 0);
-    //     lcd.print(message);
-    // }
+        // Validate customKey in range
+        if (motorI>N_SNACKS-1) {
+            lcd.print("Out of range");
+            return;
+        }
+        
+        char message[50]; //buffer
+        sprintf(message, "Selected %c.", customKey);
+        Serial.println(message);
 
-    Serial.println("Stepping");
-    motor.setSpeed(1000);
-    motor.step(tau);
-    Serial.println("Finished stepping");
-    delay(1500);
+        lcd.print(message);
+
+        
+        Serial.println("motorI");
+        Serial.println(motorI);
+        motors[motorI].setSpeed(1000);
+        motors[motorI].step(tau);
+    }
 }
