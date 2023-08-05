@@ -1,18 +1,20 @@
+// # Global Constants
 // #define N_SNACKS 8
 #define N_SNACKS 2
+
 
 // # Liquid Crystal Display
 #include <LiquidCrystal_I2C.h> //from github.com/johnrickman/LiquidCrystal_I2C
 
 LiquidCrystal_I2C lcd(0x27, 20, 4); //20x4 display from amazon.com/gp/product/B01DKETWO2
-
+    // Pin 9–13
 
 // # Keypad
 // Mark Stanley's Keypad library
 #include <Keypad.h>
 
-const byte N_ROWS=4;
-const byte N_COLS=3;
+const uint8_t N_ROWS=4;
+const uint8_t N_COLS=3;
 
 char keys[N_ROWS][N_COLS]={
     { '1', '2', '3' },
@@ -21,35 +23,33 @@ char keys[N_ROWS][N_COLS]={
     { '*', '0', '#' }
 };
 
-byte rowPins[N_ROWS]={ 9, 8, 7, 6 };
-byte colPins[N_COLS]={ 5, 4, 3 };
+uint8_t rowPins[N_ROWS]={ 9, 8, 7, 6 };
+uint8_t colPins[N_COLS]={ 5, 4, 3 };
 
-Keypad keypad=Keypad(makeKeymap(keys), rowPins, colPins, N_ROWS, N_COLS);
+Keypad keypad(makeKeymap(keys), rowPins, colPins, N_ROWS, N_COLS);
+
+
 
 
 // # Stepper Motor
 #include <Stepper.h>
+Stepper* motors=malloc(sizeof(Stepper)*N_SNACKS);
+
+uint8_t pins[N_SNACKS][4]={
+    {46, 48, 50, 52}, //Pin mapping: 1N1 -> 46, 1N2 -> 48, 1N3 -> 50, 1N4 -> 52
+    {47, 49, 51, 53},
+    // {0, 0, 0, 0},
+    // {0, 0, 0, 0},
+    // {0, 0, 0, 0},
+    // {0, 0, 0, 0},
+    // {0, 0, 0, 0},
+    // {0, 0, 0, 0},
+};
+
 #define STEPS_PER_REVOLUTION 32
 #define GEAR_REDUCTION 64
 const float STEPS_PER_OUTPUT_REVOLUTION=STEPS_PER_REVOLUTION*GEAR_REDUCTION;
 const float tau=STEPS_PER_OUTPUT_REVOLUTION; //one full revolution
-// byte pins[4]={13, 12, 11, 10};
-byte pins[N_SNACKS][4]={
-    {46, 48, 50, 52}, //Pin mapping: 1N1 -> 46, 1N2 -> 48, 1N3 -> 50, 1N4 -> 52
-    {53, 51, 49, 47},
-    // {0, 0, 0, 0},
-    // {0, 0, 0, 0},
-    // {0, 0, 0, 0},
-    // {0, 0, 0, 0},
-    // {0, 0, 0, 0},
-    // {0, 0, 0, 0},
-};
-Stepper motors[2]={
-    Stepper(STEPS_PER_REVOLUTION, pins[0][0], pins[0][2], pins[0][1], pins[0][3]),
-    Stepper(STEPS_PER_REVOLUTION, pins[1][0], pins[1][2], pins[1][1], pins[1][3])
-};
-// for (byte i=0; i<N_SNACKS; i++)
-//     motors[i]=motor(STEPS_PER_REVOLUTION, pins[i][0], pins[i][2], pins[i][1], pins[i][3]);
 
 
 void setup() {
@@ -60,22 +60,22 @@ void setup() {
     lcd.backlight();
     lcd.clear();
     lcd.setCursor(0, 0);
+
+    for (int i=0; i<N_SNACKS; i++)
+        motors[i]=Stepper(STEPS_PER_REVOLUTION, pins[0][0], pins[0][2], pins[0][1], pins[0][3]);
 }
 
 
 void loop() {
-    // Get value if keypad pressed
-    char customKey=keypad.getKey();
+    char customKey=keypad.getKey(); //get value if keypad pressed
     
-    if (customKey) { //pressed key
-        byte motorI=int(customKey)-int('1'); //offset from 1
+    if (customKey) { //key pressed
+        uint8_t motorI=int(customKey)-int('1'); //offset from 1
         lcd.clear();
         lcd.setCursor(0, 0);
 
-        // Validate customKey in range
-        if (motorI>N_SNACKS-1) {
-            lcd.print("Out of range");
-            return;
+        if (motorI>N_SNACKS-1) { //validate customKey in range
+            return lcd.print("Out of range");
         }
         
         char message[50]; //buffer
@@ -84,9 +84,8 @@ void loop() {
 
         lcd.print(message);
 
+        Serial.print("motorI"); Serial.println(motorI);
         
-        Serial.println("motorI");
-        Serial.println(motorI);
         motors[motorI].setSpeed(1000);
         motors[motorI].step(tau);
     }
