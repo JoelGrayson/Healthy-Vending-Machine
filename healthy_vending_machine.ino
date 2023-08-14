@@ -28,7 +28,13 @@ uint8_t colPins[N_COLS]={ 5, 4, 3 };
 
 Keypad keypad(makeKeymap(keys), rowPins, colPins, N_ROWS, N_COLS);
 
-
+// # Dollar Acceptor
+// Each pulse is configured to be one dollar. From https://github.com/mudmin/AnotherMaker/blob/master/arduino-powered-cash-reader/cash-reader-with-lcd.c
+#define dollarPin 15 //blue pin. Purple pin is connected to ground
+// It is HIGH when normal. When $ inserted, it beeps LOW for ~100 millis per dollar
+int pulse=HIGH;
+int prevPulse=HIGH;
+double moneyInserted=0;
 
 
 // # Stepper Motor
@@ -63,10 +69,15 @@ void setup() {
 
     for (int i=0; i<N_SNACKS; i++)
         motors[i]=Stepper(STEPS_PER_REVOLUTION, pins[0][0], pins[0][2], pins[0][1], pins[0][3]);
+    
+
+    // Bill Acceptor
+    pinMode(dollarPin, INPUT_PULLUP);
 }
 
 
 void loop() {
+    // Keypad
     char customKey=keypad.getKey(); //get value if keypad pressed
     
     if (customKey) { //key pressed
@@ -88,5 +99,13 @@ void loop() {
         
         motors[motorI].setSpeed(1000);
         motors[motorI].step(tau);
+    }
+
+    // Bill Acceptor
+    prevPulse=pulse;
+    pulse=digitalRead(dollarPin);
+    if (pulse==HIGH && prevPulse==LOW) {
+        moneyInserted++;
+        Serial.print("You have $"); Serial.println(moneyInserted);
     }
 }
