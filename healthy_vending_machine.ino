@@ -106,6 +106,9 @@ void loop() {
     pulse=digitalRead(dollarPin);
     if (pulse==HIGH && prevPulse==LOW) {
         moneyInserted++;
-        Serial.print("You have $"); Serial.println(moneyInserted);
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("You have $");
+        lcd.print(moneyInserted);
     }
 }
