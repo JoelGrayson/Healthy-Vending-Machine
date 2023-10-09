@@ -48,6 +48,10 @@ void turnOnce(uint8_t motorI) { //turns the transistor controlling the spring mo
 }
 
 
+// # Log
+#include "log.hpp"
+
+
 void setup() {
     Serial.begin(9600);
     while (!Serial);
@@ -65,6 +69,10 @@ void setup() {
     // DC Motor
     for (uint8_t motorPin : motorPins)
         pinMode(motorPin, OUTPUT);
+
+    // Log
+    initializeLog();
+    addLog("turned on");
 }
 
 void loop() {
@@ -77,12 +85,16 @@ void loop() {
         // Show message
         lcd.clear();
         lcd.setCursor(0, 0);
-        if (motorI>N_SNACKS-1) return lcd.print("Out of range"); //validate customKey in range
+        if (motorI>N_SNACKS-1) {
+            addLog("out of range");
+            return lcd.print("Out of range"); //validate customKey in range
+        }
 
         char message[50]; //buffer
         sprintf(message, "Selected %c.", customKey);
         lcd.print(message);
         Serial.println(message);
+        addLog(message);
 
         // Turn
         turnOnce(motorI);
@@ -97,5 +109,10 @@ void loop() {
         lcd.setCursor(0, 0);
         lcd.print("You have $");
         lcd.print(moneyInserted);
+        addLog("inserted $", String(moneyInserted));
     }
+}
+
+void log() {
+
 }
