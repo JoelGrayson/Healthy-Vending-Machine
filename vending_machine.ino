@@ -105,9 +105,8 @@ void loop() {
     char customKey=keypad.getKey(); //get value if keypad pressed
     
     if (customKey) { //key pressed
-        if (customKey=='#') { //print log to Serial port if computer is connected
-            Serial.println("printing log");
-        }
+        if (customKey=='#') //print log to Serial port if computer is connected
+            return printLog();
     
         int tempSelectedSnackIndex=int(customKey)-int('1'); //offset from 1
         // customKey - one-based indexing
@@ -138,7 +137,7 @@ void loop() {
         lcd.print("costs $");
         lcd.print(snackPrices[selectedSnackIndex]);
         Serial.println(message);
-        addLog("Selected", snackName);
+        addLog("Selected ", snackName);
         if (moneyInserted==0) {
             lcd.setCursor(0, 2);
             double snackPrice=snackPrices[selectedSnackIndex];
@@ -161,7 +160,7 @@ void loop() {
         sprintf(message, "You inserted $%d", (int)moneyInserted);
         lcd.setCursor(0, 2);
         lcd.print(message);
-        addLog(message);
+        addLog("Inserted", String(moneyInserted));
     }
 
     if (moneyInserted!=0 && selectedSnackIndex!=-1) { //snack selected and money in

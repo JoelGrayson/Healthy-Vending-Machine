@@ -8,5 +8,6 @@
 
 void initializeLog(void);
 void addLog(String message, String secondPartOfMessage="");
+void printLog(void);
 
 #endif

@@ -1,3 +1,4 @@
+#include "SD.h"
 #include "log.hpp"
 
 void initializeLog(void) {
@@ -10,7 +11,7 @@ void initializeLog(void) {
 void addLog(String message, String secondPartOfMessage="") {
     File logFile=SD.open("log.txt", FILE_WRITE);
     if (!logFile)
-        Serial.println("could not open log.txt");
+        return Serial.println("could not open log.txt");
     if (secondPartOfMessage=="") {
         logFile.println(message);
     } else {
@@ -21,4 +22,19 @@ void addLog(String message, String secondPartOfMessage="") {
     
     Serial.print("Printed message: ");
     Serial.println(message);
+}
+
+void printLog(void) {
+    File logFile=SD.open("log.txt", FILE_READ);
+    if (!logFile)
+        return Serial.println("could not open log.txt");
+    
+    Serial.println("-----Printing log.txt-----");
+
+    while (logFile.available())
+        Serial.write(logFile.read());
+
+    Serial.println("---------------");
+
+    logFile.close();
 }
