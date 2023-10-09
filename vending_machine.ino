@@ -1,5 +1,31 @@
 // # Global Constants
 #define N_SNACKS 8
+String snackNames[]={
+    "Mushroom Jerky",
+    "Honey Sticks",
+    "Harvest Snaps",
+    "Spicy Chickpeas",
+    "Blue Doritos",
+    "Waffle",
+    "Twix Bar",
+    "Ruffles"
+};
+double snackPrices[]={
+    5.00,
+    1.00,
+    5.00,
+    1.00,
+    1.00,
+    2.00,
+    1.00,
+    2.00
+};
+
+
+// # Logic
+double moneyInserted=0;
+int selectedSnackIndex=-1;
+
 
 
 // # Liquid Crystal Display
@@ -34,11 +60,10 @@ Keypad keypad(makeKeymap(keys), rowPins, colPins, N_ROWS, N_COLS);
 // It is HIGH when normal. When $ inserted, it beeps LOW for ~100 millis per dollar
 uint8_t pulse=HIGH;
 uint8_t prevPulse=HIGH;
-double moneyInserted=0;
 
 
 // # DC Motor
-const uint8_t motorPins[N_SNACKS]={ 23, 25, 27, 29, 31, 33, 35, 37 }; //23–37 even numbers
+const uint8_t motorPins[N_SNACKS]={ 23, 25, 27, 29, 31, 33, 35, 37 }; //23–37 odd numbers
 void turnOnce(uint8_t motorI) { //turns the transistor controlling the spring motor just long enough for one revolution
     const int transistorPin=motorPins[motorI];
     Serial.print("Turning "); Serial.println(transistorPin);
@@ -80,24 +105,50 @@ void loop() {
     char customKey=keypad.getKey(); //get value if keypad pressed
     
     if (customKey) { //key pressed
-        uint8_t motorI=(uint8_t) (int(customKey)-int('1')); //offset from 1
+        if (customKey=='#') { //print log to Serial port if computer is connected
+            Serial.println("printing log");
+        }
+    
+        int tempSelectedSnackIndex=int(customKey)-int('1'); //offset from 1
+        // customKey - one-based indexing
+        // selectedSnackIndex - zero-based indexing
 
         // Show message
         lcd.clear();
         lcd.setCursor(0, 0);
-        if (motorI>N_SNACKS-1) {
+        if (tempSelectedSnackIndex>N_SNACKS-1 || tempSelectedSnackIndex<0) {
+            Serial.print(tempSelectedSnackIndex);
+            Serial.println(" is out of range");
             addLog("out of range");
-            return lcd.print("Out of range"); //validate customKey in range
+            lcd.print("Out of range"); //validate customKey in range
+            return;
         }
 
-        char message[50]; //buffer
-        sprintf(message, "Selected %c.", customKey);
-        lcd.print(message);
-        Serial.println(message);
-        addLog(message);
+        selectedSnackIndex=tempSelectedSnackIndex;
 
-        // Turn
-        turnOnce(motorI);
+        Serial.print("snackNames[selectedSnackIndex] and selectedSnackIndex: ");
+        Serial.print(snackNames[selectedSnackIndex]);
+        Serial.println(selectedSnackIndex);
+
+        String snackName=snackNames[selectedSnackIndex];
+        char message[50]; //buffer
+        sprintf(message, "%s (#%c)", snackName.c_str(), customKey);
+        lcd.print(message);
+        lcd.setCursor(0, 1);
+        lcd.print("costs $");
+        lcd.print(snackPrices[selectedSnackIndex]);
+        Serial.println(message);
+        addLog("Selected", snackName);
+        if (moneyInserted==0) {
+            lcd.setCursor(0, 2);
+            double snackPrice=snackPrices[selectedSnackIndex];
+            if (snackPrice==1.0)
+                lcd.print("Insert $1 bill");
+            else if (snackPrice==2.0 || snackPrice==3.0 || snackPrice==4.0)
+                lcd.print("Insert $1 bills");
+            else if (snackPrice>=5.0)
+                lcd.print("Insert $1 or $5 bill");
+        }
     }
 
     // Bill Acceptor
@@ -105,11 +156,27 @@ void loop() {
     pulse=digitalRead(dollarPin);
     if (pulse==HIGH && prevPulse==LOW) {
         moneyInserted++;
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("You have $");
-        lcd.print(moneyInserted);
-        addLog("inserted $", String(moneyInserted));
+
+        char message[50];
+        sprintf(message, "You inserted $%d", (int)moneyInserted);
+        lcd.setCursor(0, 2);
+        lcd.print(message);
+        addLog(message);
+    }
+
+    if (moneyInserted!=0 && selectedSnackIndex!=-1) { //snack selected and money in
+        if (moneyInserted>=snackPrices[selectedSnackIndex]) { //check if your balance affords the price of the snack
+            turnOnce(selectedSnackIndex);
+            addLog("Bought", String(selectedSnackIndex));
+            lcd.setCursor(0, 0);
+            lcd.print("Thank you");
+            lcd.setCursor(0, 1);
+            lcd.print("I hope you enjoy your");
+            lcd.setCursor(0, 2);
+            lcd.print(snackNames[selectedSnackIndex]);
+            moneyInserted=0;
+            selectedSnackIndex=-1;
+        }
     }
 }
 
