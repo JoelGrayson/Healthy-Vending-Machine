@@ -21,10 +21,13 @@ double snackPrices[]={
     2.00
 };
 
+const unsigned long idleDurationBeforeReset=600000; //10 minutes
+
 
 // # Logic
 double moneyInserted=0;
 int selectedSnackIndex=-1;
+unsigned long buttonLastPressed=0;
 
 
 
@@ -80,7 +83,6 @@ void turnOnce(uint8_t motorI) { //turns the transistor controlling the spring mo
 void setup() {
     Serial.begin(9600);
     while (!Serial);
-    Serial.println("Serial began");
     
     lcd.init();
     lcd.backlight();
@@ -98,6 +100,8 @@ void setup() {
     // Log
     initializeLog();
     addLog("turned on");
+
+    Serial.println(idleDurationBeforeReset);
 }
 
 void loop() {
@@ -105,6 +109,13 @@ void loop() {
     char customKey=keypad.getKey(); //get value if keypad pressed
     
     if (customKey) { //key pressed
+        buttonLastPressed=millis();
+
+        if (customKey=='0') { //press 0 to reset
+            reset();
+            displayBalance();
+            return;
+        }
         if (customKey=='#') //print log to Serial port if computer is connected
             return printLog();
     
@@ -136,6 +147,7 @@ void loop() {
         lcd.setCursor(0, 1);
         lcd.print("costs $");
         lcd.print(snackPrices[selectedSnackIndex]);
+        displayBalance();
         Serial.println(message);
         addLog("Selected ", snackName);
         if (moneyInserted==0) {
@@ -154,12 +166,10 @@ void loop() {
     prevPulse=pulse;
     pulse=digitalRead(dollarPin);
     if (pulse==HIGH && prevPulse==LOW) {
+        buttonLastPressed=millis();
         moneyInserted++;
 
-        char message[50];
-        sprintf(message, "You inserted $%d", (int)moneyInserted);
-        lcd.setCursor(0, 2);
-        lcd.print(message);
+        displayBalance();
         addLog("Inserted", String(moneyInserted));
     }
 
@@ -167,18 +177,39 @@ void loop() {
         if (moneyInserted>=snackPrices[selectedSnackIndex]) { //check if your balance affords the price of the snack
             turnOnce(selectedSnackIndex);
             addLog("Bought", String(selectedSnackIndex));
+            lcd.clear();
             lcd.setCursor(0, 0);
             lcd.print("Thank you");
             lcd.setCursor(0, 1);
-            lcd.print("I hope you enjoy your");
+            lcd.print("Enjoy your");
             lcd.setCursor(0, 2);
             lcd.print(snackNames[selectedSnackIndex]);
+            lcd.print("!");
             moneyInserted=0;
             selectedSnackIndex=-1;
         }
     }
+
+    if (moneyInserted!=0 || selectedSnackIndex!=-1) { //snack selected or money in
+        if (millis()-buttonLastPressed>idleDurationBeforeReset) { //idle duration
+            Serial.println("Been inactive for too long");
+            moneyInserted=0;
+            reset();
+        }
+    }
 }
 
-void log() {
+void reset() {
+    selectedSnackIndex=-1;
+    lcd.clear();
+    lcd.setCursor(0, 0);
+}
 
+void displayBalance() {
+    if (moneyInserted==0) return; //don't show a balance of 0
+    
+    char message[50];
+    sprintf(message, "You inserted $%d", (int)moneyInserted);
+    lcd.setCursor(0, 2);
+    lcd.print(message);
 }

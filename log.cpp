@@ -12,16 +12,18 @@ void addLog(String message, String secondPartOfMessage="") {
     File logFile=SD.open("log.txt", FILE_WRITE);
     if (!logFile)
         return Serial.println("could not open log.txt");
+    
+    Serial.print("Printed message: ");
     if (secondPartOfMessage=="") {
         logFile.println(message);
+        Serial.println(message);
     } else {
         logFile.print(message);
         logFile.println(secondPartOfMessage);
+        Serial.print(message);
+        Serial.println(secondPartOfMessage);
     }
     logFile.close();
-    
-    Serial.print("Printed message: ");
-    Serial.println(message);
 }
 
 void printLog(void) {
