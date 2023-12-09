@@ -1,5 +1,6 @@
 // # Global Constants
 #define N_SNACKS 8
+#define TAU 6.2831853071
 String snackNames[]={
     "Mushroom Jerky",
     "Honey Sticks",
@@ -68,10 +69,14 @@ uint8_t prevPulse=HIGH;
 // # DC Motor
 const uint8_t motorPins[N_SNACKS]={ 23, 25, 27, 29, 31, 33, 35, 37 }; //23–37 odd numbers
 void turnOnce(uint8_t motorI) { //turns the transistor controlling the spring motor just long enough for one revolution
+    turnInRadians(motorI, TAU);
+}
+void turnInRadians(uint8_t motorI, double radians) {
+    double delayPerRadian=3300/TAU;
     const int transistorPin=motorPins[motorI];
     Serial.print("Turning "); Serial.println(transistorPin);
     digitalWrite(transistorPin, HIGH);
-    delay(3300);
+    delay(delayPerRadian*radians);
     digitalWrite(transistorPin, LOW);
 }
 
@@ -114,12 +119,7 @@ void loop() {
             displayBalance();
             return;
         }
-        if (customKey=='#') { //# to do special actions
-            // Press with 200 ms between:
-            // # {password} # for printing log to serial port
-            // # {password} * * for turning all springs
-            // # nothing for cancelling action
-
+        if (customKey=='#') { //press # for admin mode
             #define password1 '1'
             #define password2 '2'
             #define password3 '3'
@@ -130,21 +130,7 @@ void loop() {
             if (!waitForNextKey(password2)) return;
             if (!waitForNextKey(password3)) return;
             if (!waitForNextKey(password4)) return;
-
-            if (waitForNextKey('#')) { //print log to serial port if computer is connected
-                Serial.println("Print log");
-                printLog();
-                return;
-            }
-            if (waitForNextKey('*')) {
-                Serial.print("Turning all springs from 1 to ");
-                Serial.println(N_SNACKS);
-                for (uint8_t i=0; i<N_SNACKS; i++)
-                    turnOnce(i);
-                return;
-            }
-
-            Serial.println("No action selected");
+            adminMode();
             return;
         }
     
@@ -243,7 +229,6 @@ void displayBalance() {
     lcd.print(message);
 }
 
-
 bool waitForNextKey(char correctKey) { //2 seconds to press the key
     char pressedKey;
     for (uint8_t i=0; i<20; i++) {
@@ -258,4 +243,74 @@ bool waitForNextKey(char correctKey) { //2 seconds to press the key
     
     Serial.println("Aborting because pressed wrong key");
     return false;
+}
+
+void adminMode() {
+    // 0 for print log
+    // 1–8 for turn a specific motor
+    // * for turn all motors
+    // # for exiting admin mode
+    // 9 for shift key
+    // # for exit
+    
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Admin Mode");
+    
+    bool shiftPressed=false; //when pressed, small movements to motors
+    
+    while (true) {
+        char pressedKey=keypad.getKey(); //get value if keypad pressed
+        delay(50);
+
+        if (shiftPressed) {
+            if (pressedKey=='1') turnInRadians(0, TAU/30);
+            if (pressedKey=='2') turnInRadians(1, TAU/30);
+            if (pressedKey=='3') turnInRadians(2, TAU/30);
+            if (pressedKey=='4') turnInRadians(3, TAU/30);
+            if (pressedKey=='5') turnInRadians(4, TAU/30);
+            if (pressedKey=='6') turnInRadians(5, TAU/30);
+            if (pressedKey=='7') turnInRadians(6, TAU/30);
+            if (pressedKey=='8') turnInRadians(7, TAU/30);
+        } else {
+            if (pressedKey=='1') turnOnce(0);
+            if (pressedKey=='2') turnOnce(1);
+            if (pressedKey=='3') turnOnce(2);
+            if (pressedKey=='4') turnOnce(3);
+            if (pressedKey=='5') turnOnce(4);
+            if (pressedKey=='6') turnOnce(5);
+            if (pressedKey=='7') turnOnce(6);
+            if (pressedKey=='8') turnOnce(7);
+        }
+
+        if (pressedKey=='0') { //print log to serial port if computer is connected
+            Serial.println("Print log");
+            printLog();
+        }
+
+        if (pressedKey=='*') {
+            Serial.print("Turning all springs from 1 to ");
+            Serial.println(N_SNACKS);
+            for (uint8_t i=0; i<N_SNACKS; i++)
+                turnOnce(i);
+        }
+
+        if (pressedKey=='9') {
+            shiftPressed=!shiftPressed;
+            if (shiftPressed) {
+                lcd.setCursor(0, 1);
+                lcd.print("Shift Pressed");
+            } else {
+                lcd.setCursor(0, 1);
+                lcd.print("             ");
+            }
+        }
+
+        if (pressedKey=='#') {
+            Serial.println("Exiting admin mode");
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            return;
+        }
+    }
 }
