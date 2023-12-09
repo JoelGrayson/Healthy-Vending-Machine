@@ -100,8 +100,6 @@ void setup() {
     // Log
     initializeLog();
     addLog("turned on");
-
-    Serial.println(idleDurationBeforeReset);
 }
 
 void loop() {
@@ -116,8 +114,39 @@ void loop() {
             displayBalance();
             return;
         }
-        if (customKey=='#') //print log to Serial port if computer is connected
-            return printLog();
+        if (customKey=='#') { //# to do special actions
+            // Press with 200 ms between:
+            // # {password} # for printing log to serial port
+            // # {password} * * for turning all springs
+            // # nothing for cancelling action
+
+            #define password1 '1'
+            #define password2 '2'
+            #define password3 '3'
+            #define password4 '4'
+
+            Serial.println("Please enter the password to run an action");
+            if (!waitForNextKey(password1)) return;
+            if (!waitForNextKey(password2)) return;
+            if (!waitForNextKey(password3)) return;
+            if (!waitForNextKey(password4)) return;
+
+            if (waitForNextKey('#')) { //print log to serial port if computer is connected
+                Serial.println("Print log");
+                printLog();
+                return;
+            }
+            if (waitForNextKey('*')) {
+                Serial.print("Turning all springs from 1 to ");
+                Serial.println(N_SNACKS);
+                for (uint8_t i=0; i<N_SNACKS; i++)
+                    turnOnce(i);
+                return;
+            }
+
+            Serial.println("No action selected");
+            return;
+        }
     
         int tempSelectedSnackIndex=int(customKey)-int('1'); //offset from 1
         // customKey - one-based indexing
@@ -179,14 +208,14 @@ void loop() {
             addLog("Bought", String(selectedSnackIndex));
             lcd.clear();
             lcd.setCursor(0, 0);
-            lcd.print("Thank you");
+            lcd.print("Thank you. Enjoy the");
             lcd.setCursor(0, 1);
-            lcd.print("Enjoy your");
-            lcd.setCursor(0, 2);
             lcd.print(snackNames[selectedSnackIndex]);
             lcd.print("!");
             moneyInserted=0;
             selectedSnackIndex=-1;
+            delay(3000);
+            lcd.clear();
         }
     }
 
@@ -212,4 +241,21 @@ void displayBalance() {
     sprintf(message, "You inserted $%d", (int)moneyInserted);
     lcd.setCursor(0, 2);
     lcd.print(message);
+}
+
+
+bool waitForNextKey(char correctKey) { //2 seconds to press the key
+    char pressedKey;
+    for (uint8_t i=0; i<20; i++) {
+        delay(100);
+        pressedKey=keypad.getKey();
+        if (pressedKey==correctKey) {
+            Serial.print("Correct key: ");
+            Serial.println(correctKey);
+            return true;
+        }
+    }
+    
+    Serial.println("Aborting because pressed wrong key");
+    return false;
 }
