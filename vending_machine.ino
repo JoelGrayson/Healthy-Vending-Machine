@@ -248,69 +248,86 @@ bool waitForNextKey(char correctKey) { //2 seconds to press the key
 void adminMode() {
     // 0 for print log
     // 1–8 for turn a specific motor
+        // one rotation in NORMAL mode
+        // 1/10 rotation in MILLI mode
+        // 1/100 rotation in MICRO mode
     // * for turn all motors
     // # for exiting admin mode
-    // 9 for shift key
+    // 9 for change mode
     // # for exit
     
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Admin Mode");
     
+    enum Mode {
+        NORMAL,
+        MILLI,
+        MICRO
+    };
+
+    Mode mode=NORMAL;
     bool shiftPressed=false; //when pressed, small movements to motors
+    
+    lcd.setCursor(0, 1);
+    lcd.print("Normal mode");
     
     while (true) {
         char pressedKey=keypad.getKey(); //get value if keypad pressed
         delay(50);
-
-        if (shiftPressed) {
-            if (pressedKey=='1') turnInRadians(0, TAU/30);
-            if (pressedKey=='2') turnInRadians(1, TAU/30);
-            if (pressedKey=='3') turnInRadians(2, TAU/30);
-            if (pressedKey=='4') turnInRadians(3, TAU/30);
-            if (pressedKey=='5') turnInRadians(4, TAU/30);
-            if (pressedKey=='6') turnInRadians(5, TAU/30);
-            if (pressedKey=='7') turnInRadians(6, TAU/30);
-            if (pressedKey=='8') turnInRadians(7, TAU/30);
-        } else {
-            if (pressedKey=='1') turnOnce(0);
-            if (pressedKey=='2') turnOnce(1);
-            if (pressedKey=='3') turnOnce(2);
-            if (pressedKey=='4') turnOnce(3);
-            if (pressedKey=='5') turnOnce(4);
-            if (pressedKey=='6') turnOnce(5);
-            if (pressedKey=='7') turnOnce(6);
-            if (pressedKey=='8') turnOnce(7);
+        
+        // Set move amount
+        double moveAmount;
+        switch (mode) {
+            case NORMAL: moveAmount=TAU; break;
+            case MILLI:  moveAmount=TAU/10; break;
+            case MICRO:  moveAmount=TAU/100; break;
+            default:     moveAmount=TAU; break;
         }
+        
+        // Perform action
+        switch (pressedKey) {
+            // Turn motor
+            case '1': turnInRadians(0, moveAmount); break;
+            case '2': turnInRadians(1, moveAmount); break;
+            case '3': turnInRadians(2, moveAmount); break;
+            case '4': turnInRadians(3, moveAmount); break;
+            case '5': turnInRadians(4, moveAmount); break;
+            case '6': turnInRadians(5, moveAmount); break;
+            case '7': turnInRadians(6, moveAmount); break;
+            case '8': turnInRadians(7, moveAmount); break;
 
-        if (pressedKey=='0') { //print log to serial port if computer is connected
-            Serial.println("Print log");
-            printLog();
-        }
-
-        if (pressedKey=='*') {
-            Serial.print("Turning all springs from 1 to ");
-            Serial.println(N_SNACKS);
-            for (uint8_t i=0; i<N_SNACKS; i++)
-                turnOnce(i);
-        }
-
-        if (pressedKey=='9') {
-            shiftPressed=!shiftPressed;
-            if (shiftPressed) {
+            // Print log to serial port if computer is connected
+            case '0':
+                Serial.println("Print log");
+                printLog();
+                break;
+            
+            // Turn all springs
+            case '*':
+                Serial.print("Turning all springs from 1 to ");
+                Serial.println(N_SNACKS);
+                for (uint8_t i=0; i<N_SNACKS; i++)
+                    turnOnce(i);
+                break;
+            
+            // Change mode
+            case '9':
                 lcd.setCursor(0, 1);
-                lcd.print("Shift Pressed");
-            } else {
-                lcd.setCursor(0, 1);
-                lcd.print("             ");
-            }
-        }
-
-        if (pressedKey=='#') {
-            Serial.println("Exiting admin mode");
-            lcd.clear();
-            lcd.setCursor(0, 0);
-            return;
+                lcd.print("           ")
+                switch (mode) {
+                    case NORMAL: mode=MILLI;  lcd.print("Milli");  break;
+                    case MILLI:  mode=MICRO;  lcd.print("Micro");  break;
+                    case MICRO:  mode=NORMAL; lcd.print("Normal"); break;
+                }
+                lcd.print(" mode");
+                break;
+            
+            case '#':
+                Serial.println("Exiting admin mode");
+                lcd.clear();
+                lcd.setCursor(0, 0);
+                return;
         }
     }
 }
