@@ -1,15 +1,17 @@
 // # Global Constants
 #define N_SNACKS 8
 #define TAU 6.2831853071
+#define DURATION_OF_REVOLUTION 3600
+
 String snackNames[]={
     "Mushroom Jerky",
     "Honey Sticks",
     "Harvest Snaps",
     "Spicy Chickpeas",
-    "Blue Doritos",
-    "Waffle",
-    "Twix Bar",
-    "Ruffles"
+    "Doritos",
+    "Goldfish",
+    "Ruffles",
+    "Kit Kat"
 };
 double snackPrices[]={
     5.00,
@@ -17,9 +19,9 @@ double snackPrices[]={
     5.00,
     1.00,
     1.00,
-    2.00,
     1.00,
-    2.00
+    2.00,
+    1.00
 };
 
 const unsigned long idleDurationBeforeReset=600000; //10 minutes
@@ -69,10 +71,9 @@ uint8_t prevPulse=HIGH;
 // # DC Motor
 const uint8_t motorPins[N_SNACKS]={ 23, 25, 27, 29, 31, 33, 35, 37 }; //23–37 odd numbers
 void turnOnce(uint8_t motorI) { //turns the transistor controlling the spring motor just long enough for one revolution
-    turnInRadians(motorI, TAU);
 }
 void turnInRadians(uint8_t motorI, double radians) {
-    double delayPerRadian=3300/TAU;
+    double delayPerRadian=DURATION_OF_REVOLUTION/TAU;
     const int transistorPin=motorPins[motorI];
     Serial.print("Turning "); Serial.println(transistorPin);
     digitalWrite(transistorPin, HIGH);
@@ -314,7 +315,8 @@ void adminMode() {
             // Change mode
             case '9':
                 lcd.setCursor(0, 1);
-                lcd.print("           ")
+                lcd.print("           ");
+                lcd.setCursor(0, 1);
                 switch (mode) {
                     case NORMAL: mode=MILLI;  lcd.print("Milli");  break;
                     case MILLI:  mode=MICRO;  lcd.print("Micro");  break;
