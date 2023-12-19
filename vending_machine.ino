@@ -4,15 +4,15 @@
 #define NUM_REVS 1.03 //it is better for it to turn too much than too little
 
 double durationsOfRevolution[]={ //how long it takes different springs to turn
-    3600,
-    3600,
-    3600,
-    3600,
+    3350,
+    3343,
+    3342,
+    3520,
 
-    1000,
-    3250,
-    3600,
-    3600
+    3071,
+    3173,
+    3070,
+    3300
 };
 
 String snackNames[]={
@@ -98,7 +98,14 @@ void turnInMS(uint8_t motorI, double milliseconds) { //turn in milliseconds
     delay(milliseconds);
     digitalWrite(transistorPin, LOW);
 }
-
+void startTurningMotor(uint8_t motorI) {
+    const int transistorPin=motorPins[motorI];
+    digitalWrite(transistorPin, HIGH);
+}
+void stopTurningMotor(uint8_t motorI) {
+    const int transistorPin=motorPins[motorI];
+    digitalWrite(transistorPin, LOW);
+}
 
 // # Log
 #include "log.hpp"
@@ -305,22 +312,33 @@ void controlPanel() {
                 lcd.print("Turned for          ");
                 const int incrementAmount=100;
                 int milliseconds=0;
-                while (true) {
-                    turnInMS((uint8_t)motorI, incrementAmount);
-                    milliseconds+=incrementAmount;
-                    lcd.setCursor(0, 2);
-                    lcd.print(milliseconds);
-                    lcd.print(" ms");
 
+                startTurningMotor(motorI);
+                long long startedTurningAt=millis();
+                
+                lcd.setCursor(0, 2);
+                lcd.print("Press any key");
+                lcd.setCursor(0, 3);
+                lcd.print("to stop");
+
+                while (true) {
+                    // Stopped when any key pressed
                     char pressedKey=keypad.getKey();
                     if (pressedKey) {
-                        lcd.setCursor(0, 3);
+                        long long stoppedTurningAt=millis();
+                        int duration=(int)(stoppedTurningAt-startedTurningAt);
+
+                        displayMode("Test Duration");
+                        lcd.setCursor(0, 2);
                         lcd.print("Finished");
+                        lcd.setCursor(0, 3);
+                        lcd.print(duration);
+                        lcd.print(" ms");
+                        stopTurningMotor(motorI);
                         break;
                     }
-                    Serial.print("Delaying by ");
-                    Serial.println(incrementAmount);
-                    delay(150);
+
+                    delay(20);
                 }
                 continue;
             }
