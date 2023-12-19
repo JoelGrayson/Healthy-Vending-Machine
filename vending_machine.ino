@@ -1,7 +1,8 @@
 // # Global Constants
 #define N_SNACKS 8
 #define TAU 6.2831853071
-#define DURATION_OF_REVOLUTION 3300
+#define NUM_REVS 1.03 //it is better for it to turn too much than too little
+
 double durationsOfRevolution[]={ //how long it takes different springs to turn
     3600,
     3600,
@@ -123,6 +124,9 @@ void setup() {
     // Log
     initializeLog();
     addLog("turned on");
+
+    for (int i=0; i<8; i++) //better that it goes too much than too little so that a student gets 2 snacks instead of 0
+        durationsOfRevolution[i]*=NUM_REVS;
 }
 
 void loop() {
@@ -137,7 +141,7 @@ void loop() {
             displayBalance();
             return;
         }
-        if (customKey=='#') { //press # for admin mode
+        if (customKey=='#') { //press # for control panel
             #define password1 '1'
             #define password2 '2'
             #define password3 '3'
@@ -148,7 +152,7 @@ void loop() {
             if (!waitForNextKey(password2)) return;
             if (!waitForNextKey(password3)) return;
             if (!waitForNextKey(password4)) return;
-            adminMode();
+            controlPanel();
             return;
         }
     
@@ -263,20 +267,18 @@ bool waitForNextKey(char correctKey) { //2 seconds to press the key
     return false;
 }
 
-void adminMode() {
+void controlPanel() {
     // 0 for print log
     // 1–8 for turn a specific motor
         // one rotation in NORMAL mode
         // 1/10 rotation in MILLI mode
         // 1/100 rotation in MICRO mode
     // * for turn all motors
-    // # for exiting admin mode
+    // # for exiting control panel
     // 9 for change mode
     // # for exit
     
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Admin Mode");
+    displayMode("Normal");
     
     enum Mode {
         NORMAL,
@@ -289,9 +291,6 @@ void adminMode() {
     Mode mode=NORMAL;
     bool shiftPressed=false; //when pressed, small movements to motors
     
-    lcd.setCursor(0, 1);
-    lcd.print("Normal Mode");
-    
     while (true) {
         char pressedKey=keypad.getKey(); //get value if keypad pressed
         delay(50);
@@ -303,8 +302,8 @@ void adminMode() {
                 Serial.println("Testing");
                 
                 lcd.setCursor(0, 1);
-                lcd.print("Turned for");
-                int incrementAmount=20;
+                lcd.print("Turned for          ");
+                const int incrementAmount=100;
                 int milliseconds=0;
                 while (true) {
                     turnInMS((uint8_t)motorI, incrementAmount);
@@ -314,12 +313,14 @@ void adminMode() {
                     lcd.print(" ms");
 
                     char pressedKey=keypad.getKey();
-                    if (pressedKey) { //
+                    if (pressedKey) {
                         lcd.setCursor(0, 3);
                         lcd.print("Finished");
                         break;
                     }
-                    delay(incrementAmount);
+                    Serial.print("Delaying by ");
+                    Serial.println(incrementAmount);
+                    delay(150);
                 }
                 continue;
             }
@@ -363,21 +364,18 @@ void adminMode() {
             
             // Change mode
             case '9':
-                lcd.setCursor(0, 1);
-                lcd.print("           ");
-                lcd.setCursor(0, 1);
                 switch (mode) {
-                    case NORMAL:         mode=DECI;          lcd.print("Deci");   break;
-                    case DECI:           mode=MILLI;         lcd.print("Milli");  break;
-                    case MILLI:          mode=MICRO;         lcd.print("Micro");  break;
-                    case MICRO:          mode=TEST_DURATION; lcd.print("Test Duration"); break;
-                    case TEST_DURATION:  mode=NORMAL;        lcd.print("Normal"); break;
+                    case NORMAL:         mode=DECI;          displayMode("Deci");          break;
+                    case DECI:           mode=MILLI;         displayMode("Milli");         break;
+                    case MILLI:          mode=MICRO;         displayMode("Micro");         break;
+                    case MICRO:          mode=TEST_DURATION; displayMode("Test Duration"); break;
+                    case TEST_DURATION:  mode=NORMAL;        displayMode("Normal");        break;
                 }
-                lcd.print(" Mode");
                 break;
             
             case '#':
-                lcd.setCursor(1, 0);
+                lcd.clear();
+                lcd.setCursor(0, 0);
                 lcd.print("Exiting");
                 delay(600);
                 lcd.clear();
@@ -385,6 +383,16 @@ void adminMode() {
                 return;
         }
     }
+
+}
+
+void displayMode(char modeName[]) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("---Control Panel---");
+    lcd.setCursor(0, 1);
+    lcd.print(modeName);
+    lcd.print(" Mode");
 }
 
 int keyToMotorI(char key) {
