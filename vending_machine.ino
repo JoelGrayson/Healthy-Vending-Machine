@@ -16,18 +16,18 @@ double durationsOfRevolution[]={ //how long it takes different springs to turn
 };
 
 String snackNames[]={
+    "Dried Mangos",
     "Mushroom Jerky",
-    "Honey Sticks",
     "Harvest Snaps",
     "Spicy Chickpeas",
     "Doritos",
     "Goldfish",
     "Ruffles",
-    "Kit Kat"
+    "Oreos"
 };
 double snackPrices[]={
     5.00,
-    1.00,
+    5.00,
     5.00,
     1.00,
     1.00,
