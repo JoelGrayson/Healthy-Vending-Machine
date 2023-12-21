@@ -2,8 +2,13 @@
 #define N_SNACKS 8
 #define TAU 6.2831853071
 #define NUM_REVS 1.03 //it is better for it to turn too much than too little
+#define IDLE_DURATION_BEFORE_RESET 600000 //10 minutes
+#define password1 '1'
+#define password2 '2'
+#define password3 '3'
+#define password4 '4'
 
-double durationsOfRevolution[]={ //how long it takes different springs to turn
+const double durationsOfRevolution[]={ //how long it takes different springs to turn
     3350,
     3343,
     3342,
@@ -15,7 +20,7 @@ double durationsOfRevolution[]={ //how long it takes different springs to turn
     3300
 };
 
-String snackNames[]={
+const String snackNames[]={
     "Dried Mangos",
     "Mushroom Jerky",
     "Harvest Snaps",
@@ -25,7 +30,7 @@ String snackNames[]={
     "Ruffles",
     "Oreos"
 };
-double snackPrices[]={
+const double snackPrices[]={
     5.00,
     5.00,
     5.00,
@@ -36,14 +41,11 @@ double snackPrices[]={
     1.00
 };
 
-const unsigned long idleDurationBeforeReset=600000; //10 minutes
-
 
 // # Logic
 double moneyInserted=0;
 int selectedSnackIndex=-1;
 unsigned long buttonLastPressed=0;
-
 
 
 // # Liquid Crystal Display
@@ -82,15 +84,18 @@ uint8_t prevPulse=HIGH;
 
 // # DC Motor
 const uint8_t motorPins[N_SNACKS]={ 23, 25, 27, 29, 31, 33, 35, 37 }; //23–37 odd numbers
+
 void turnOnce(uint8_t motorI) { //turns the transistor controlling the spring motor just long enough for one revolution
     Serial.print("Turning motor #"); Serial.println(motorI);
     turnInRadians(motorI, TAU);
 }
+
 void turnInRadians(uint8_t motorI, double radians) {
     double durationOfRevolution=durationsOfRevolution[motorI];
     double delayPerRadian=durationOfRevolution/TAU;
     turnInMS(motorI, delayPerRadian*radians);
 }
+
 void turnInMS(uint8_t motorI, double milliseconds) { //turn in milliseconds
     const int transistorPin=motorPins[motorI];
     
@@ -98,10 +103,12 @@ void turnInMS(uint8_t motorI, double milliseconds) { //turn in milliseconds
     delay(milliseconds);
     digitalWrite(transistorPin, LOW);
 }
+
 void startTurningMotor(uint8_t motorI) {
     const int transistorPin=motorPins[motorI];
     digitalWrite(transistorPin, HIGH);
 }
+
 void stopTurningMotor(uint8_t motorI) {
     const int transistorPin=motorPins[motorI];
     digitalWrite(transistorPin, LOW);
@@ -149,11 +156,6 @@ void loop() {
             return;
         }
         if (customKey=='#') { //press # for control panel
-            #define password1 '1'
-            #define password2 '2'
-            #define password3 '3'
-            #define password4 '4'
-
             Serial.println("Please enter the password to run an action");
             if (!waitForNextKey(password1)) return;
             if (!waitForNextKey(password2)) return;
@@ -217,6 +219,7 @@ void loop() {
         addLog("Inserted", String(moneyInserted));
     }
 
+    // Check if balance is high enough to buy a snack
     if (moneyInserted!=0 && selectedSnackIndex!=-1) { //snack selected and money in
         if (moneyInserted>=snackPrices[selectedSnackIndex]) { //check if your balance affords the price of the snack
             turnOnce(selectedSnackIndex);
@@ -234,8 +237,9 @@ void loop() {
         }
     }
 
+    // Time out when money inserted and idled for too long
     if (moneyInserted!=0 || selectedSnackIndex!=-1) { //snack selected or money in
-        if (millis()-buttonLastPressed>idleDurationBeforeReset) { //idle duration
+        if (millis()-buttonLastPressed>IDLE_DURATION_BEFORE_RESET) { //idle duration
             Serial.println("Been inactive for too long");
             moneyInserted=0;
             reset();
@@ -243,6 +247,7 @@ void loop() {
     }
 }
 
+// Utils
 void reset() {
     selectedSnackIndex=-1;
     lcd.clear();
@@ -272,6 +277,29 @@ bool waitForNextKey(char correctKey) { //2 seconds to press the key
     
     Serial.println("Aborting because pressed wrong key");
     return false;
+}
+
+void displayMode(char modeName[]) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("---Control Panel---");
+    lcd.setCursor(0, 1);
+    lcd.print(modeName);
+    lcd.print(" Mode");
+}
+
+int keyToMotorI(char key) {
+    switch (key) {
+        case '1': return 0;
+        case '2': return 1;
+        case '3': return 2;
+        case '4': return 3;
+        case '5': return 4;
+        case '6': return 5;
+        case '7': return 6;
+        case '8': return 7;
+        default:  return -1;
+    }
 }
 
 void controlPanel() {
@@ -402,27 +430,4 @@ void controlPanel() {
         }
     }
 
-}
-
-void displayMode(char modeName[]) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("---Control Panel---");
-    lcd.setCursor(0, 1);
-    lcd.print(modeName);
-    lcd.print(" Mode");
-}
-
-int keyToMotorI(char key) {
-    switch (key) {
-        case '1': return 0;
-        case '2': return 1;
-        case '3': return 2;
-        case '4': return 3;
-        case '5': return 4;
-        case '6': return 5;
-        case '7': return 6;
-        case '8': return 7;
-        default:  return -1;
-    }
 }
