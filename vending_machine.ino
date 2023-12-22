@@ -8,7 +8,7 @@
 #define password3 '3'
 #define password4 '4'
 
-const double durationsOfRevolution[]={ //how long it takes different springs to turn
+double durationsOfRevolution[]={ //how long it takes different springs to turn
     3350,
     3343,
     3342,
@@ -429,5 +429,4 @@ void controlPanel() {
                 return;
         }
     }
-
 }
