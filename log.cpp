@@ -13,7 +13,7 @@ void addLog(String message, String secondPartOfMessage="") {
     if (!logFile)
         return Serial.println("could not open log.txt");
     
-    Serial.print("Printed message: ");
+    Serial.print("Logged: ");
     if (secondPartOfMessage=="") {
         logFile.println(message);
         Serial.println(message);

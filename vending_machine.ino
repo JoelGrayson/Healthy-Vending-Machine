@@ -216,14 +216,18 @@ void loop() {
         moneyInserted++;
 
         displayBalance();
-        addLog("Inserted", String(moneyInserted));
+        addLog("Inserted ", String(moneyInserted));
     }
 
     // Check if balance is high enough to buy a snack
     if (moneyInserted!=0 && selectedSnackIndex!=-1) { //snack selected and money in
         if (moneyInserted>=snackPrices[selectedSnackIndex]) { //check if your balance affords the price of the snack
             turnOnce(selectedSnackIndex);
-            addLog("Bought", String(selectedSnackIndex));
+
+            char message[60];
+            sprintf(message, "Bought %s (#%d)", snackNames[selectedSnackIndex].c_str(), selectedSnackIndex);
+            addLog(message);
+            
             lcd.clear();
             lcd.setCursor(0, 0);
             lcd.print("Thank you. Enjoy the");
@@ -372,7 +376,7 @@ void controlPanel() {
             }
         }
         
-        // Set move amount
+        // Mode determines move amount
         double moveAmount;
         switch (mode) {
             case NORMAL: moveAmount=TAU;     break;
